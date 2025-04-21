@@ -1,0 +1,4 @@
+Baseline Training Time: 124.55 seconds
+Mixed-Precision Training Time: 72.65 seconds
+Training speed improved by 41.67% using mixed-precision.
+Peak GPU Memory Usage: 4.31 GB
