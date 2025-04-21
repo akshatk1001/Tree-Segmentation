@@ -6,6 +6,7 @@ from torchvision import transforms # import transforms from torchvision to trans
 from torchvision.utils import save_image  # import save_image from torchvision.utils to save images/results
 import os # import os to work with directories
 import random # import random to randomly select images from the directory
+import shutil # import shutil to copy files from one directory to another
 
 def create_loader(train_images_dir, train_masks_dir, val_images_dir, val_masks_dir, batch_size, num_workers, train_transform, val_transform, pin_memory): 
     '''
@@ -126,18 +127,30 @@ def example_images(loader, model, folder, device, epoch_num):
     
     model.train() # set the model back to training mode
 
+def clear_directory(directory):
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
 
+def randomly_select_vals(num_vals, all_images_dir, all_masks_dir, train_images_dir, val_images_dir, train_masks_dir, val_masks_dir):
+    clear_directory(train_images_dir) # clear the training images directory
+    clear_directory(val_images_dir) # clear the validation images directory
+    clear_directory(train_masks_dir) # clear the training masks directory
+    clear_directory(val_masks_dir) # clear the validation masks directory
 
-def randomly_select_vals(num_vals, all_images_dir, train_images_dir, val_images_dir):
     all_images = os.listdir(all_images_dir) # get all the images in the directory and store them in a list
-    selected_images = random.select(all_images, num_vals) # randomly select num_vals images from the list of all images
+    selected_images = random.sample(all_images, num_vals) # randomly select num_vals images from the list of all images
     for image in all_images:
+        renamed_mask = image.replace(".jpg", "_mask.png") # rename the mask to match the image name
         image_path = os.path.join(all_images_dir, image)
+        mask_path = os.path.join(all_masks_dir, renamed_mask) # get the corresponding mask path for the image
         if image in selected_images:
-            os.rename(image_path, os.path.join(val_images_dir, image))
+            shutil.copy(image_path, os.path.join(val_images_dir, image))
+            shutil.copy(mask_path, os.path.join(val_masks_dir, renamed_mask))
         else:
-            os.rename(image_path, os.path.join(train_images_dir, image))
-
+            shutil.copy(image_path, os.path.join(train_images_dir, image))
+            shutil.copy(mask_path, os.path.join(train_masks_dir, renamed_mask))
 
 
 ''' IGNORE THIS. IT IS NOT IMPORTANT AND I AM CURRENTLY CREATING A BETTER VERSION OF THIS FUNCTION. '''

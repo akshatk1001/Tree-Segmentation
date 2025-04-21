@@ -20,6 +20,8 @@ TRAIN_IMG_DIR = "data/training_kaggle_images" # Directory containing training im
 TRAIN_MASK_DIR = "data/training_masks" # Directory containing training masks.
 VAL_IMG_DIR = "data/val_images" # Directory containing validation images.
 VAL_MASK_DIR = "data/val_masks" # Directory containing validation masks.
+ALL_IMAGES_DIR = "data/all_images" # Directory containing all images.
+ALL_MASKS_DIR = "data/all_masks" # Directory containing all masks.
 
 print(f"Device is {DEVICE} \n") # print the device being used for our own information
 
@@ -111,6 +113,8 @@ def main():
         if epoch % 5 == 0: # save the model every 5 epochs
             save_checkpoint(model, optimizer, f"training_epoch_{epoch + 1}.pth.tar") # save the model and optimizer state dictionaries to a file. The file name is training_epoch_{epoch + 1}.pth.tar.
             example_images(val_dataloader, model, f"data/segmented_images/{epoch + 1}", DEVICE, (epoch + 1)) # save the segmented images from the validation data loader to a directory. The directory name is data/segmented_images/{epoch + 1}. 
+
+        randomly_select_vals(30, ALL_IMAGES_DIR, ALL_MASKS_DIR, TRAIN_IMG_DIR, VAL_IMG_DIR, TRAIN_MASK_DIR, VAL_MASK_DIR) 
         
     torch.save(model, "final_tree_segmenting_UNET.pth") # save the final model to a file named final_tree_segmenting_UNET.pth. 
 
