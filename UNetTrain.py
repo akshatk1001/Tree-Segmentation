@@ -11,12 +11,12 @@ import torch.optim as optim # import PyTorch's optimization module
 LEARNING_RATE = 1e-5 # Learning rate is the step size at which the model is updated. The smaller the learning rate, the slower the model learns but the more accurate it is.
 NUM_WORKERS = 20 # Number of workers to use for loading data. Usually set to 2*number of cores.
 DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu" # Device is the hardware on which the model is trained. Check if CUDA (NVIDIA GPU) is available, if not, check if MPS (macOS) is available, else use CPU.
-BATCH_SIZE = 32 # Batch size is the number of images processed at once. 
+BATCH_SIZE = 16 # Batch size is the number of images processed at once. 
 NUM_EPOCHS = 100 # Number of epochs is the number of times the model sees the entire dataset. 
 IMAGE_WIDTH = 3024/6 # Image width is the width of the image. We divide by 6 to reduce the size of the image for faster training.
 IMAGE_HEIGHT = 4032/6 # Image height is the height of the image. We divide by 6 to reduce the size of the image for faster training.
 PIN_MEMORY = True # Pin memory copies tensors to CUDA pinned memory for faster data transfer to GPU.
-TRAIN_IMG_DIR = "data/training_kaggle_images" # Directory containing training images.
+TRAIN_IMG_DIR = "data/training_images" # Directory containing training images.
 TRAIN_MASK_DIR = "data/training_masks" # Directory containing training masks.
 VAL_IMG_DIR = "data/val_images" # Directory containing validation images.
 VAL_MASK_DIR = "data/val_masks" # Directory containing validation masks.
@@ -96,6 +96,7 @@ def main():
     loss = nn.BCEWithLogitsLoss() # Create the loss function. We use Binary Cross Entropy with Logits Loss. We use with logits because the model outputs logits (raw scores) and we want to apply the sigmoid function to convert them to probabilities. 
     scaler = torch.amp.GradScaler(device=DEVICE) # Create the gradient scaler. We use GradScaler to scale the gradients to prevent underflow and overflow when using mixed precision training.
 
+    randomly_select_vals(30, ALL_IMAGES_DIR, ALL_MASKS_DIR, TRAIN_IMG_DIR, VAL_IMG_DIR, TRAIN_MASK_DIR, VAL_MASK_DIR) 
     train_dataloader = create_train_dataset(TRAIN_IMG_DIR, TRAIN_MASK_DIR, BATCH_SIZE, NUM_WORKERS, transform_image, pin_memory=PIN_MEMORY) 
     val_dataloader = create_val_dataset(VAL_IMG_DIR, VAL_MASK_DIR, BATCH_SIZE, NUM_WORKERS, transform_val, pin_memory=PIN_MEMORY) # Create the validation data loader. We use the create_val_dataset function from utils.py to create the validation data loader.
 
@@ -115,6 +116,8 @@ def main():
             example_images(val_dataloader, model, f"data/segmented_images/{epoch + 1}", DEVICE, (epoch + 1)) # save the segmented images from the validation data loader to a directory. The directory name is data/segmented_images/{epoch + 1}. 
 
         randomly_select_vals(30, ALL_IMAGES_DIR, ALL_MASKS_DIR, TRAIN_IMG_DIR, VAL_IMG_DIR, TRAIN_MASK_DIR, VAL_MASK_DIR) 
+        train_dataloader = create_train_dataset(TRAIN_IMG_DIR, TRAIN_MASK_DIR, BATCH_SIZE, NUM_WORKERS, transform_image, pin_memory=PIN_MEMORY)
+        val_dataloader = create_val_dataset(VAL_IMG_DIR, VAL_MASK_DIR, BATCH_SIZE, NUM_WORKERS, transform_val, pin_memory=PIN_MEMORY)
         
     torch.save(model, "final_tree_segmenting_UNET.pth") # save the final model to a file named final_tree_segmenting_UNET.pth. 
 

@@ -16,7 +16,7 @@ class TreeDataSet(Dataset):
     
     def __getitem__(self, index):
         image_path = os.path.join(self.images_path, self.images_list[index])
-        mask_path = os.path.join(self.masks_path, self.images_list[index].replace(".jpg", ".png"))
+        mask_path = os.path.join(self.masks_path, self.images_list[index].replace(".jpg", "_mask.png"))
 
         image = Image.open(image_path).convert('RGB')
         image = np.array(image)
