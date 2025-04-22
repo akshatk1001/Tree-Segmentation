@@ -7,3 +7,4 @@ data/training_masks
 data/val_images
 data/val_masks
 Training Epochs/
+final_tree_segmenting_UNET.pth
