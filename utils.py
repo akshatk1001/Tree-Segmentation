@@ -1,5 +1,5 @@
 import torch # import pytorch
-from treedataset2 import TreeDataSet # import the TreeDataSet class from treedataset2.py
+from treedataset import TreeDataSet # import the TreeDataSet class from treedataset2.py
 from torch.utils.data import DataLoader # import DataLoader from torch.utils.data to create data loaders
 from PIL import Image # import Image from PIL to work with images
 from torchvision import transforms # import transforms from torchvision to transform images to tensors and apply other transformations

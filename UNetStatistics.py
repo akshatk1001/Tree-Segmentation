@@ -4,7 +4,7 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from UNet import UNet
 import torch.optim as optim
-from treedataset2 import TreeDataSet
+from treedataset import TreeDataSet
 from torch.utils.data import DataLoader
 import torchvision.transforms.v2 as transforms
 from tqdm import tqdm
