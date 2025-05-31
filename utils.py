@@ -53,14 +53,16 @@ def validate(data_loader, model, loss_fn, device):
     '''
     model.eval() # set the model to evaluation mode so that it doesn't update weights
     total_loss = 0 # initialize the total loss to 0
-    for image, mask in data_loader: # iterate over the data loader (validation set) which contains images and masks in batches
-        image = image.to(device) # move the image to the device (CPU or CUDA or MPS)
-        mask = mask.unsqueeze(1).to(device) # move the mask to the device. Unsqueeze to add a dimension to the mask tensor (1 channel) since the model expects 1 channel masks (white and black where white is the object)  
     
-    with torch.amp.autocast(device_type=device): # use torch.amp.autocast to use mixed precision training which means it uses both 16-bit and 32-bit floating point numbers to speed up training
-        prediction = model(image) # get the prediction from the model using the image
-        loss = loss_fn(prediction, mask) # calculate the loss using the prediction and the mask
-        total_loss += loss.item() # add the loss to the total loss
+    with torch.no_grad(): # disable gradient computation for validation
+        for image, mask in data_loader: # iterate over the data loader (validation set) which contains images and masks in batches
+            image = image.to(device) # move the image to the device (CPU or CUDA or MPS)
+            mask = mask.unsqueeze(1).to(device) # move the mask to the device. Unsqueeze to add a dimension to the mask tensor (1 channel) since the model expects 1 channel masks (white and black where white is the object)  
+        
+            with torch.amp.autocast(device_type=device): # use torch.amp.autocast to use mixed precision training which means it uses both 16-bit and 32-bit floating point numbers to speed up training
+                prediction = model(image) # get the prediction from the model using the image
+                loss = loss_fn(prediction, mask) # calculate the loss using the prediction and the mask
+                total_loss += loss.item() # add the loss to the total loss
     
     model.train() # set the model back to training mode
     
