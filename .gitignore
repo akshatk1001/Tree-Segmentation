@@ -4,6 +4,7 @@ misc/
 data/segmented_images
 data/training_images
 data/training_masks
+data/predicted_masks
 data/val_images
 data/val_masks
 Training Epochs/
