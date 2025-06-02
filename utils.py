@@ -160,7 +160,7 @@ def randomly_select_vals(num_vals, all_images_dir, all_masks_dir, train_images_d
             shutil.copy(mask_path, os.path.join(train_masks_dir, renamed_mask))
 
 
-def test_model(model_loc, image_loc, image_height, image_width, device):
+def test_model_single_image(model_loc, image_loc, image_height, image_width, device):
     model = torch.load(model_loc, map_location=device, weights_only=False)  # Load the model from the specified location
     model = model.to(device)
     model.eval()
@@ -185,7 +185,67 @@ def test_model(model_loc, image_loc, image_height, image_width, device):
         bin_mask = (raw_pred > 0.5).float()
 
     save_image(bin_mask, "segmented.png")
+
     mask_np = bin_mask.squeeze().cpu().numpy().astype(np.uint8) * 255  # Convert to numpy array and scale to 0-255
     
     cleaned_mask = remove_noise_connected_components(mask_np, min_area=100)  # Remove noise from the mask
     cv2.imwrite("segmented_noiseremoved.png", cleaned_mask)  # Save the cleaned mask as an image
+
+def test_model(model: torch.nn.Module, image: np.ndarray, image_height: int, image_width: int, device: torch.device, number: int, folder: str):
+    if not os.path.exists(f"{folder}/justsegmented"):
+        os.makedirs(f"{folder}/justsegmented")
+    if not os.path.exists(f"{folder}/noiseremoved"):
+        os.makedirs(f"{folder}/noiseremoved")
+
+    model.eval()  # Set the model to evaluation mode
+
+    transform = A.Compose([
+        A.Resize(height=image_height, width=image_width),
+        A.Normalize(
+            mean=[0.0, 0.0, 0.0],
+            std=[1.0, 1.0, 1.0],
+            max_pixel_value=255.0
+        ),
+        ToTensorV2()
+    ])    
+    transformed = transform(image=image)["image"]
+    transformed = transformed.unsqueeze(0).to(device)  # Add batch dimension and move to device
+    
+    with torch.no_grad():
+        raw_pred = torch.sigmoid(model(transformed))
+        bin_mask = (raw_pred > 0.5).float()
+
+    save_image(bin_mask, f"{folder}/justsegmented/{number}_segmented.png")  # Save the segmented mask
+
+    mask_np = bin_mask.squeeze().cpu().numpy().astype(np.uint8) * 255  # Convert to numpy array and scale to 0-255
+    cleaned_mask = remove_noise_connected_components(mask_np, min_area=100)  # Remove noise from the mask
+
+    cv2.imwrite(f"{folder}/noiseremoved/{number}_noiseremoved_segmented.png", cleaned_mask)  # Save the cleaned mask as an image
+
+
+def create_predictions(model_loc, image_dir, output_dir, image_height, image_width, device):
+    '''
+    This function creates predictions for all images in the image directory using the model and saves them to the output directory.
+    
+    model_loc: the location of the model
+    image_dir: the directory containing the images
+    output_dir: the directory to save the predictions
+    image_height: height of the images
+    image_width: width of the images
+    device: the device to use (CPU or CUDA)
+    '''
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    model = torch.load(model_loc, map_location=device, weights_only=False)  # Load the model from the specified location
+    model = model.to(device)
+    model.eval()
+
+    images = os.listdir(image_dir)  # Get all the images in the directory
+
+    for image_name in images:
+        image_path = os.path.join(image_dir, image_name)
+        image = Image.open(image_path).convert("RGB")
+        image = np.array(image)
+
+        test_model(model, image, image_height, image_width, device, image_name.split('.')[0], output_dir)
