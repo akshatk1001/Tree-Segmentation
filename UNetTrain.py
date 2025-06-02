@@ -12,7 +12,7 @@ LEARNING_RATE = 1e-5 # Learning rate is the step size at which the model is upda
 NUM_WORKERS = 20 # Number of workers to use for loading data. Usually set to 2*number of cores.
 DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu" # Device is the hardware on which the model is trained. Check if CUDA (NVIDIA GPU) is available, if not, check if MPS (macOS) is available, else use CPU.
 BATCH_SIZE = 16 # Batch size is the number of images processed at once. 
-NUM_EPOCHS = 100 # Number of epochs is the number of times the model sees the entire dataset. 
+NUM_EPOCHS = 150 # Number of epochs is the number of times the model sees the entire dataset. 
 IMAGE_WIDTH = int(3024/6) # Image width is the width of the image. We divide by 6 to reduce the size of the image for faster training.
 IMAGE_HEIGHT = int(4032/6) # Image height is the height of the image. We divide by 6 to reduce the size of the image for faster training.
 PIN_MEMORY = True # Pin memory copies tensors to CUDA pinned memory for faster data transfer to GPU.
@@ -111,7 +111,7 @@ def main():
         eval_loss = validate(val_dataloader, model, loss, DEVICE) # validate the model using the validate function from utils.py. This function calculates the loss on the validation set.
         print(f"Epoch: {epoch + 1}/{NUM_EPOCHS}, Validation Loss: {eval_loss}") # print the epoch number and the validation loss
 
-        if epoch % 5 == 0: # save the model every 5 epochs
+        if epoch % 5 == 0 or epoch == NUM_EPOCHS - 1: # save the model every 5 epochs
             save_checkpoint(model, optimizer, f"training_epoch_{epoch + 1}.pth.tar") # save the model and optimizer state dictionaries to a file. The file name is training_epoch_{epoch + 1}.pth.tar.
             example_images(val_dataloader, model, f"data/segmented_images/{epoch + 1}", DEVICE, (epoch + 1)) # save the segmented images from the validation data loader to a directory. The directory name is data/segmented_images/{epoch + 1}. 
 

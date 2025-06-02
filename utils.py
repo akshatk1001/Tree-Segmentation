@@ -7,6 +7,11 @@ from torchvision.utils import save_image  # import save_image from torchvision.u
 import os # import os to work with directories
 import random # import random to randomly select images from the directory
 import shutil # import shutil to copy files from one directory to another
+import numpy as np # import numpy to work with arrays
+import albumentations as A # import Albumentations to apply image augmentations
+from albumentations.pytorch import ToTensorV2 # import ToTensorV2 from albumentations.pytorch to convert images to tensors
+from remove_noise import remove_noise_connected_components # import the remove_noise_connected_components function from remove_noise.py to remove noise from the masks
+import cv2 # import OpenCV to work with images
 
 def create_loader(train_images_dir, train_masks_dir, val_images_dir, val_masks_dir, batch_size, num_workers, train_transform, val_transform, pin_memory): 
     '''
@@ -155,30 +160,32 @@ def randomly_select_vals(num_vals, all_images_dir, all_masks_dir, train_images_d
             shutil.copy(mask_path, os.path.join(train_masks_dir, renamed_mask))
 
 
-''' IGNORE THIS. IT IS NOT IMPORTANT AND I AM CURRENTLY CREATING A BETTER VERSION OF THIS FUNCTION. '''
 def test_model(model_loc, image_loc, image_height, image_width, device):
-    model = torch.load(model_loc)
+    model = torch.load(model_loc, map_location=device, weights_only=False)  # Load the model from the specified location
     model = model.to(device)
+    model.eval()
     image = Image.open(image_loc).convert("RGB")
+    image = np.array(image)
 
-    transform = transforms.Compose([
-        transforms.Resize((int(image_height), int(image_width))),
-        transforms.ToTensor(),
-        transforms.Normalize(
+    transform = A.Compose([
+        A.Resize(height = image_height, width = image_width),
+        A.Normalize(
             mean=[0.0, 0.0, 0.0],
-            std=[1.0, 1.0, 1.0]
-        )
+            std=[1.0, 1.0, 1.0],
+            max_pixel_value=255.0
+        ),
+        ToTensorV2()
     ])
 
-    transformed = transform(image)
+    transformed = transform(image=image)["image"]
     transformed = transformed.unsqueeze(0).to(device)
-
-    model.eval()
     
     with torch.no_grad():
-        pred = torch.sigmoid(model(transformed))
-        pred = (pred > 0.5).float()
+        raw_pred = torch.sigmoid(model(transformed))
+        bin_mask = (raw_pred > 0.5).float()
 
-    save_image(pred, "segmented.png")
+    save_image(bin_mask, "segmented.png")
+    mask_np = bin_mask.squeeze().cpu().numpy().astype(np.uint8) * 255  # Convert to numpy array and scale to 0-255
     
-
+    cleaned_mask = remove_noise_connected_components(mask_np, min_area=100)  # Remove noise from the mask
+    cv2.imwrite("segmented_noiseremoved.png", cleaned_mask)  # Save the cleaned mask as an image
