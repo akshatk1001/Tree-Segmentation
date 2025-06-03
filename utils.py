@@ -161,7 +161,19 @@ def randomly_select_vals(num_vals, all_images_dir, all_masks_dir, train_images_d
 
 
 def test_model_single_image(model_loc, image_loc, image_height, image_width, device):
-    model = torch.load(model_loc, map_location=device, weights_only=False)  # Load the model from the specified location
+    # Check if the file is a checkpoint (.pth.tar) or a full model (.pth)
+    if model_loc.endswith('.pth.tar'):
+        # Load the checkpoint dictionary
+        checkpoint = torch.load(model_loc, map_location=device)
+        # Create a new UNet model instance
+        from UNet import UNet
+        model = UNet(input_channels=3, output_channels=1)
+        # Load the state dict from the checkpoint
+        model.load_state_dict(checkpoint["state dict"])
+    else:
+        # Load the full model directly
+        model = torch.load(model_loc, map_location=device)
+    
     model = model.to(device)
     model.eval()
     image = Image.open(image_loc).convert("RGB")
