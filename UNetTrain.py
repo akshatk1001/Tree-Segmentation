@@ -6,6 +6,7 @@ from albumentations.pytorch import ToTensorV2 # import ToTensorV2 to convert ima
 from tqdm import tqdm # import tqdm for progress bars
 from utils import * # import all functions from utils.py
 import torch.optim as optim # import PyTorch's optimization module
+from torch.amp import autocast, GradScaler # type: ignore # import autocast and GradScaler for mixed precision training
 
 '''Declaring Hyperparameters''' # Hyperparameters are variables that determine the network's architecture and how it learns
 LEARNING_RATE = 1e-5 # Learning rate is the step size at which the model is updated. The smaller the learning rate, the slower the model learns but the more accurate it is.
@@ -44,7 +45,7 @@ def train(data_loader, model, optimizer, loss_fn, scaler):
         image = image.to(device = DEVICE) # move the image to the device (GPU, MPS, or CPU)
         mask = mask.unsqueeze(1).to(device = DEVICE) # move the mask to the device. Unsqueeze to add a dimension to the mask tensor (1 channel) since the model expects 1 channel masks (white and black where white is the object)
 
-        with torch.amp.autocast(device_type=DEVICE): # use torch.amp.autocast to use mixed precision training which means it uses both 16-bit and 32-bit floating point numbers to speed up training
+        with autocast(device_type=DEVICE): # use autocast to use mixed precision training which means it uses both 16-bit and 32-bit floating point numbers to speed up training
             prediction = model(image) # get the prediction from the model using the image
             loss = loss_fn(prediction, mask) # calculate the loss using the loss function on the prediction and the mask
 
@@ -94,7 +95,7 @@ def main():
     model = UNet(input_channels=3, output_channels=1).to(DEVICE) # Create the UNet model. The input channels are 3 (RGB) and the output channels are 1 (binary mask). We move the model to the device (GPU, MPS, or CPU).
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE) # Create the optimizer. We use Adam optimizer. We pass the model parameters to the optimizer so that it can update the weights of the model. The learning rate is set to 1e-5.
     loss = nn.BCEWithLogitsLoss() # Create the loss function. We use Binary Cross Entropy with Logits Loss. We use with logits because the model outputs logits (raw scores) and we want to apply the sigmoid function to convert them to probabilities. 
-    scaler = torch.amp.GradScaler(device=DEVICE) # Create the gradient scaler. We use GradScaler to scale the gradients to prevent underflow and overflow when using mixed precision training.
+    scaler = GradScaler(DEVICE) # Create the gradient scaler. We use GradScaler to scale the gradients to prevent underflow and overflow when using mixed precision training.
 
     randomly_select_vals(30, ALL_IMAGES_DIR, ALL_MASKS_DIR, TRAIN_IMG_DIR, VAL_IMG_DIR, TRAIN_MASK_DIR, VAL_MASK_DIR) 
     train_dataloader = create_train_dataset(TRAIN_IMG_DIR, TRAIN_MASK_DIR, BATCH_SIZE, NUM_WORKERS, transform_image, pin_memory=PIN_MEMORY) 

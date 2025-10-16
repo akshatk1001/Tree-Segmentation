@@ -54,7 +54,7 @@ def calc_metrics(predicted_masks_folder : str, true_masks_folder: str):
             true_gray = true_np
             
         # Resize true mask to match predicted mask dimensions
-        true_resized = Image.fromarray(true_gray).resize((predicted_np.shape[1], predicted_np.shape[0]), Image.NEAREST)
+        true_resized = Image.fromarray(true_gray).resize((predicted_np.shape[1], predicted_np.shape[0]), Image.Resampling.NEAREST)
         true_resized_np = np.array(true_resized)
         
         # Convert to binary (assuming non-zero pixels are foreground)
